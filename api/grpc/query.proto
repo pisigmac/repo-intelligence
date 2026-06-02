@@ -1,0 +1,18 @@
+syntax = "proto3";
+package repo_intel;
+
+service QueryService {
+  rpc Query(QueryRequest) returns (QueryResponse);
+}
+
+message QueryRequest {
+  string query = 1;
+  string repo = 2;
+  int32 top_k = 3;
+}
+
+message QueryResponse {
+  repeated string capability_ids = 1;
+  repeated string playbook_ids = 2;
+  double confidence = 3;
+}

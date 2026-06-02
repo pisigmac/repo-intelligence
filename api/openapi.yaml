@@ -1,0 +1,356 @@
+openapi: 3.0.3
+info:
+  title: Repo Intelligence API
+  version: 1.0.0
+  description: |
+    Distributed intelligence compiler for codebases.
+    Compiles repositories into Capabilities (WHAT) and Playbooks (HOW).
+
+servers:
+  - url: http://localhost:8000
+    description: API Gateway
+
+components:
+  schemas:
+    RepoIngestRequest:
+      type: object
+      required: [git_url]
+      properties:
+        git_url:
+          type: string
+          example: https://github.com/org/repo.git
+        branch:
+          type: string
+          default: main
+        auth_token:
+          type: string
+          description: Optional GitHub/GitLab personal access token
+
+    RepoIngestResponse:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [queued, processing, completed, failed]
+        repo_id:
+          type: string
+
+    Capability:
+      type: object
+      required: [id, name, repo, commit]
+      properties:
+        id:
+          type: string
+          example: cap_auth_001
+        name:
+          type: string
+          example: JWT Authentication
+        description:
+          type: string
+        category:
+          type: string
+          enum: [auth, database, api, middleware, utility, unknown]
+        repo:
+          type: string
+        commit:
+          type: string
+        entry_points:
+          type: array
+          items:
+            type: object
+            properties:
+              method:
+                type: string
+              path:
+                type: string
+              file:
+                type: string
+              line:
+                type: integer
+        interfaces:
+          type: object
+          description: Function signatures, exported types, etc.
+        dependencies:
+          type: array
+          items:
+            type: string
+        signals:
+          type: object
+          description: Events emitted or consumed
+        created_at:
+          type: string
+          format: date-time
+
+    Playbook:
+      type: object
+      required: [id, capability_id, name, steps]
+      properties:
+        id:
+          type: string
+          example: pb_add_auth_001
+        capability_id:
+          type: string
+        name:
+          type: string
+          example: Add New Authenticated Endpoint
+        description:
+          type: string
+        steps:
+          type: array
+          items:
+            type: object
+            required: [id, type, target]
+            properties:
+              id:
+                type: string
+              type:
+                type: string
+                enum: [code_modification, add_middleware, run_tests, git_commit, validate_syntax, rollback_checkpoint]
+              target:
+                type: string
+              payload:
+                type: object
+              condition:
+                type: string
+                description: Optional jq-style condition for conditional execution
+        validation:
+          type: object
+          properties:
+            pre_conditions:
+              type: array
+              items:
+                type: object
+            post_conditions:
+              type: array
+              items:
+                type: object
+            test_command:
+              type: string
+        rollback:
+          type: object
+          properties:
+            strategy:
+              type: string
+              enum: [git_revert, patch_reverse, manual]
+            steps:
+              type: array
+              items:
+                type: object
+        observability:
+          type: object
+          properties:
+            log_level:
+              type: string
+            metrics:
+              type: array
+              items:
+                type: string
+
+    QueryRequest:
+      type: object
+      required: [query]
+      properties:
+        query:
+          type: string
+          example: How do I add a new protected route?
+        repo:
+          type: string
+          description: Optional repo filter
+        top_k:
+          type: integer
+          default: 5
+
+    QueryResponse:
+      type: object
+      properties:
+        capabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Capability'
+        playbooks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Playbook'
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+
+    ExecutionRequest:
+      type: object
+      required: [playbook_id]
+      properties:
+        playbook_id:
+          type: string
+        context:
+          type: object
+          description: Runtime variables for the playbook
+          example:
+            new_route: /api/users
+            method: GET
+
+    ExecutionResponse:
+      type: object
+      properties:
+        execution_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed, rolled_back]
+        steps_completed:
+          type: integer
+        total_steps:
+          type: integer
+        logs:
+          type: array
+          items:
+            type: object
+            properties:
+              step_id:
+                type: string
+              status:
+                type: string
+              output:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
+        request_id:
+          type: string
+
+  parameters:
+    RepoFilter:
+      name: repo
+      in: query
+      schema:
+        type: string
+    CapabilityFilter:
+      name: capability_id
+      in: query
+      schema:
+        type: string
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /repos:
+    post:
+      summary: Ingest a Git repository
+      operationId: ingestRepo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RepoIngestRequest'
+      responses:
+        '202':
+          description: Ingestion started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RepoIngestResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /capabilities:
+    get:
+      summary: List capabilities
+      operationId: listCapabilities
+      parameters:
+        - $ref: '#/components/parameters/RepoFilter'
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of capabilities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Capability'
+
+  /playbooks:
+    get:
+      summary: List playbooks
+      operationId: listPlaybooks
+      parameters:
+        - $ref: '#/components/parameters/CapabilityFilter'
+        - $ref: '#/components/parameters/RepoFilter'
+      responses:
+        '200':
+          description: List of playbooks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Playbook'
+
+  /query:
+    post:
+      summary: Natural language query
+      operationId: querySystem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryRequest'
+      responses:
+        '200':
+          description: Query results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponse'
+
+  /execute:
+    post:
+      summary: Execute a playbook
+      operationId: executePlaybook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecutionRequest'
+      responses:
+        '200':
+          description: Execution accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExecutionResponse'

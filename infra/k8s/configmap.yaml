@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: repo-intel-config
+  namespace: repo-intelligence
+data:
+  DATABASE_URL: "postgresql+asyncpg://repo:repo@postgres/repo_intelligence"
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  QDRANT_URL: "http://qdrant:6333"
+  LOG_LEVEL: "INFO"

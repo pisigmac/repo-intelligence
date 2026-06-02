@@ -1,0 +1,365 @@
+version: "3.9"
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks:
+    - repo-intel
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  # Databases & Messaging
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: repo
+      POSTGRES_PASSWORD: repo
+      POSTGRES_DB: repo_intelligence
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U repo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - repo-intel
+
+  kafka:
+    image: redpandadata/redpanda:v23.3.5
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --memory=1G
+      - --reserve-memory=0M
+      - --overprovisioned
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr=internal://kafka:9092,external://localhost:19092
+    ports:
+      - "9092:9092"
+      - "19092:19092"
+    healthcheck:
+      test: ["CMD", "rpk", "cluster", "info"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - repo-intel
+
+  init-kafka:
+    image: redpandadata/redpanda:v23.3.5
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      "rpk topic create repo.ingested --brokers kafka:9092 -p 3 -r 1 || true &&
+       rpk topic create repo.parsed --brokers kafka:9092 -p 3 -r 1 || true &&
+       rpk topic create repo.analyzed --brokers kafka:9092 -p 3 -r 1 || true &&
+       rpk topic create capability.generated --brokers kafka:9092 -p 3 -r 1 || true &&
+       rpk topic create playbook.generated --brokers kafka:9092 -p 3 -r 1 || true &&
+       rpk topic create execution.requested --brokers kafka:9092 -p 3 -r 1 || true &&
+       rpk topic create execution.completed --brokers kafka:9092 -p 3 -r 1 || true &&
+       rpk topic create feedback.analyzed --brokers kafka:9092 -p 3 -r 1 || true &&
+       rpk topic create playbook.improved --brokers kafka:9092 -p 3 -r 1 || true &&
+       rpk topic create playbook.approved --brokers kafka:9092 -p 3 -r 1 || true &&
+       rpk topic create playbook.transferred --brokers kafka:9092 -p 3 -r 1 || true &&
+       rpk topic create agent.task --brokers kafka:9092 -p 3 -r 1 || true &&
+       rpk topic create agent.response --brokers kafka:9092 -p 3 -r 1 || true"
+    networks:
+      - repo-intel
+
+  qdrant:
+    image: qdrant/qdrant:v1.7.4
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - repo-intel
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - QUERY_SERVICE_URL=http://query-service:8080
+      - EXECUTION_SERVICE_URL=http://execution-service:8080
+    depends_on:
+      - query-service
+      - execution-service
+    <<: *service-defaults
+
+  # Core Services
+  ingestion-service:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REPO_STORAGE_PATH=/data/repos
+      - LOG_LEVEL=INFO
+    volumes:
+      - repo_storage:/data/repos
+      - ./test-repo:/app/test-repo:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
+    <<: *service-defaults
+
+  parser-service:
+    build:
+      context: .
+      dockerfile: services/parser/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REPO_STORAGE_PATH=/data/repos
+      - LOG_LEVEL=INFO
+    volumes:
+      - repo_storage:/data/repos
+      - ./test-repo:/app/test-repo:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
+    <<: *service-defaults
+
+  analysis-service:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: analysis
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - QDRANT_URL=http://qdrant:6333
+      - LOG_LEVEL=INFO
+    volumes:
+      - repo_storage:/data/repos
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
+      qdrant:
+        condition: service_started
+    <<: *service-defaults
+
+  capability-service:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: capability
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - QDRANT_URL=http://qdrant:6333
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
+      qdrant:
+        condition: service_started
+    <<: *service-defaults
+
+  playbook-service:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: playbook
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
+    <<: *service-defaults
+
+  query-service:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: query
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - QDRANT_URL=http://qdrant:6333
+      - LOG_LEVEL=INFO
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    <<: *service-defaults
+
+  execution-service:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: execution
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REPO_STORAGE_PATH=/data/repos
+      - LOG_LEVEL=INFO
+    volumes:
+      - repo_storage:/data/repos
+      - ./test-repo:/app/test-repo:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
+    <<: *service-defaults
+
+  update-service:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.service
+      args:
+        SERVICE: update
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REPO_STORAGE_PATH=/data/repos
+      - LOG_LEVEL=INFO
+    volumes:
+      - repo_storage:/data/repos
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
+    <<: *service-defaults
+
+# Phase 2 Services
+  feedback-service:
+    build:
+      context: .
+      dockerfile: services/feedback/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - QDRANT_URL=http://qdrant:6333
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
+    <<: *service-defaults
+
+  optimization-service:
+    build:
+      context: .
+      dockerfile: services/optimization/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
+      feedback-service:
+        condition: service_started
+    <<: *service-defaults
+
+  knowledge-service:
+    build:
+      context: .
+      dockerfile: services/knowledge/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - QDRANT_URL=http://qdrant:6333
+      - REPO_STORAGE_PATH=/data/repos
+      - LOG_LEVEL=INFO
+    volumes:
+      - repo_storage:/data/repos
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
+      qdrant:
+        condition: service_started
+    <<: *service-defaults
+
+  approval-service:
+    build:
+      context: .
+      dockerfile: services/approval/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - LOG_LEVEL=INFO
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
+    <<: *service-defaults
+
+  agent-orchestrator:
+    build:
+      context: .
+      dockerfile: services/agent-orchestrator/Dockerfile
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - QUERY_SERVICE_URL=http://query-service:8080
+      - EXECUTION_SERVICE_URL=http://execution-service:8080
+      - FEEDBACK_SERVICE_URL=http://feedback-service:8080
+      - LOG_LEVEL=INFO
+    depends_on:
+      query-service:
+        condition: service_started
+      execution-service:
+        condition: service_started
+      feedback-service:
+        condition: service_started
+    <<: *service-defaults
+
+volumes:
+  postgres_data:
+  qdrant_data:
+  repo_storage:
+
+networks:
+  repo-intel:
+    driver: bridge

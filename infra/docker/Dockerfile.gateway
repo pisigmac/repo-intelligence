@@ -1,0 +1,9 @@
+FROM python:3.11-slim
+WORKDIR /app
+COPY libs/ /app/libs/
+COPY infra/docker/gateway.py /app/
+COPY api/openapi.yaml /app/api/
+RUN pip install fastapi uvicorn httpx
+ENV PYTHONPATH=/app
+EXPOSE 8000
+CMD ["python", "-m", "gateway"]

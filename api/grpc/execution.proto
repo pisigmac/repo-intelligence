@@ -1,0 +1,18 @@
+syntax = "proto3";
+package repo_intel;
+
+service ExecutionService {
+  rpc ExecutePlaybook(ExecutionRequest) returns (stream ExecutionResponse);
+}
+
+message ExecutionRequest {
+  string playbook_id = 1;
+  map<string, string> context = 2;
+}
+
+message ExecutionResponse {
+  string status = 1;
+  string step_id = 2;
+  string output = 3;
+  int64 timestamp = 4;
+}

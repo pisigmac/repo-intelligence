@@ -1,0 +1,32 @@
+syntax = "proto3";
+package repo_intel;
+
+service CapabilityService {
+  rpc GetCapabilities(QueryRequest) returns (CapabilityResponse);
+  rpc GetCapabilityDetail(CapabilityRequest) returns (Capability);
+}
+
+message QueryRequest {
+  string query = 1;
+  string repo = 2;
+}
+
+message CapabilityRequest {
+  string capability_id = 1;
+}
+
+message CapabilityResponse {
+  repeated string capability_ids = 1;
+}
+
+message Capability {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  string category = 4;
+  string repo = 5;
+  string commit = 6;
+  string entry_points_json = 7;
+  string interfaces_json = 8;
+  repeated string dependencies = 9;
+}

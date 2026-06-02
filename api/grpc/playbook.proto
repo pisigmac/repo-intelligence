@@ -1,0 +1,28 @@
+syntax = "proto3";
+package repo_intel;
+
+service PlaybookService {
+  rpc GetPlaybooks(CapabilityRequest) returns (PlaybookResponse);
+  rpc GetPlaybookDetail(PlaybookRequest) returns (Playbook);
+}
+
+message CapabilityRequest {
+  string capability_id = 1;
+}
+
+message PlaybookRequest {
+  string playbook_id = 1;
+}
+
+message PlaybookResponse {
+  repeated string playbook_ids = 1;
+}
+
+message Playbook {
+  string id = 1;
+  string capability_id = 2;
+  string name = 3;
+  string steps_json = 4;
+  string validation_json = 5;
+  string rollback_json = 6;
+}

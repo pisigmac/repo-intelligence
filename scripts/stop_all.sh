@@ -18,8 +18,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [ "$FORCE" = false ]; then
-  read -rp "Stop and remove the Repo Intelligence stack? [y/N] " answer
+if [[ "$FORCE" = false ]]; then
+  if ! read -rp "Stop and remove the Repo Intelligence stack? [y/N] " answer; then
+    echo "No input received; cancelled."
+    exit 2
+  fi
   if [[ ! "$answer" =~ ^[Yy]$ ]]; then
     echo "Cancelled."
     exit 2

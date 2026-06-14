@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from services.parser.models import ParsedFile
 
@@ -14,7 +15,7 @@ def build_dependency_graph(files: list[ParsedFile]) -> dict[str, list[str]]:
         for dep in f.dependencies:
             if dep.startswith(".") or dep.startswith("/"):
                 base = Path(f.path).parent
-                candidate = base / dep
+                candidate = Path(os.path.normpath(base / dep))
                 resolved = _resolve_candidate(candidate, path_map)
                 if resolved:
                     local_deps.append(resolved)

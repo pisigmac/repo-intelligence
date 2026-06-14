@@ -17,6 +17,7 @@ sys.path.insert(0, "/app")
 from libs.common import configure_logging, get_settings, KafkaProducer, KafkaConsumer
 from services.parser.models import ParsedFile, ParsedRepo
 from services.parser.language import detect_language
+from services.parser.javascript import parse_javascript
 from libs.utils import get_repo_files, read_file_safe
 
 settings = get_settings()
@@ -30,101 +31,6 @@ CLASSIFICATION_PATTERNS = {
     "config": re.compile(r'(config|setup|webpack|babel|eslint|prettier|dockerfile|ci/cd)', re.IGNORECASE),
     "controller": re.compile(r'(controller|handler|service)', re.IGNORECASE),
 }
-
-# JS Parsing regexes
-JS_PATTERNS = {
-    "require": re.compile(r'''require\s*\(\s*['"]([^'"]+)['"]\s*\)'''),
-    "import": re.compile(r'''import\s+(?:(?:\{[^}]*\}|[\w*]+)\s+from\s+)?['"]([^'"]+)['"];?'''),
-    "function_decl": re.compile(r"(?:async\s+)?function\s+(\w+)\s*\(([^)]*)\)"),
-    "arrow_function": re.compile(r"(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?(?:\([^)]*\)|[^=]+)\s*=>"),
-    "method": re.compile(r"(\w+)\s*\(([^)]*)\)\s*\{"),
-    "express_route": re.compile(r'''(?:app|router)\.(get|post|put|delete|patch)\s*\(\s*['"]([^'"]+)['"]'''),
-    "middleware_use": re.compile(r"(?:app|router)\.use\s*\(\s*([^)]+)\)"),
-    "class_decl": re.compile(r"class\s+(\w+)(?:\s+extends\s+(\w+))?"),
-    "export": re.compile(r"module\.exports\s*=\s*(\w+)"),
-}
-
-
-def classify_file(file_path: Path, content: str) -> str:
-    # Check filename first
-    fname = file_path.name.lower()
-    if CLASSIFICATION_PATTERNS["test"].search(fname):
-        return "test"
-    if "middleware" in fname:
-        return "middleware"
-    if "route" in fname:
-        return "route"
-    if "config" in fname:
-        return "config"
-
-    # Check content patterns
-    scores = {}
-    for category, pattern in CLASSIFICATION_PATTERNS.items():
-        scores[category] = len(pattern.findall(content))
-
-    if scores:
-        best = max(scores, key=scores.get)
-        if scores[best] > 0:
-            return best
-    return "utility"
-
-
-def parse_javascript(file_path: Path, content: str) -> dict[str, Any]:
-    """Extract AST-like summary from JavaScript using robust regex parsing."""
-    lines = content.splitlines()
-    loc = len([l for l in lines if l.strip() and not l.strip().startswith("//")])
-
-    deps = []
-    deps.extend(JS_PATTERNS["require"].findall(content))
-    deps.extend(JS_PATTERNS["import"].findall(content))
-
-    functions = []
-    for match in JS_PATTERNS["function_decl"].finditer(content):
-        functions.append({
-            "type": "function",
-            "name": match.group(1),
-            "signature": f"{match.group(1)}({match.group(2)})",
-            "async": "async" in content[max(0, match.start()-10):match.start()],
-        })
-
-    for match in JS_PATTERNS["arrow_function"].finditer(content):
-        functions.append({
-            "type": "arrow_function",
-            "name": match.group(1),
-            "signature": f"{match.group(1)}()",
-            "async": False,
-        })
-
-    routes = []
-    for match in JS_PATTERNS["express_route"].finditer(content):
-        routes.append({
-            "method": match.group(1).upper(),
-            "path": match.group(2),
-        })
-
-    middlewares = []
-    for match in JS_PATTERNS["middleware_use"].finditer(content):
-        middlewares.append(match.group(1).strip())
-
-    classes = []
-    for match in JS_PATTERNS["class_decl"].finditer(content):
-        classes.append({
-            "name": match.group(1),
-            "extends": match.group(2),
-        })
-
-    exports = JS_PATTERNS["export"].findall(content)
-
-    return {
-        "language": "javascript",
-        "lines_of_code": loc,
-        "functions": functions,
-        "routes": routes,
-        "middlewares": middlewares,
-        "classes": classes,
-        "exports": exports,
-        "dependencies": list(set(deps)),
-    }
 
 
 def parse_python(file_path: Path, content: str) -> dict[str, Any]:
@@ -163,7 +69,7 @@ def parse_file(file_path: Path) -> ParsedFile | None:
     lang = detect_language(file_path)
     classification = classify_file(file_path, content)
 
-    if lang == "javascript":
+    if lang in ("javascript", "typescript"):
         ast = parse_javascript(file_path, content)
     elif lang == "python":
         ast = parse_python(file_path, content)

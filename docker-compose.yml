@@ -22,7 +22,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
-      - "5432:5432"
+      - "5434:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U repo"]
       interval: 5s
@@ -151,6 +151,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - QDRANT_URL=http://qdrant:6333
+      - REPO_STORAGE_PATH=/data/repos
       - LOG_LEVEL=INFO
     volumes:
       - repo_storage:/data/repos
@@ -173,7 +174,10 @@ services:
       - DATABASE_URL=postgresql+asyncpg://repo:repo@postgres/repo_intelligence
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - QDRANT_URL=http://qdrant:6333
+      - REPO_STORAGE_PATH=/data/repos
       - LOG_LEVEL=INFO
+    volumes:
+      - repo_storage:/data/repos
     depends_on:
       postgres:
         condition: service_healthy

@@ -48,7 +48,7 @@ def get_repo_files(repo_path: str, extensions: Optional[list[str]] = None) -> li
     repo = Path(repo_path)
     files = []
     for f in repo.rglob("*"):
-        if f.is_file() and ".git" not in str(f):
+        if f.is_file() and ".git" not in f.parts:
             if extensions is None or f.suffix in extensions:
                 files.append(f)
     return files

@@ -97,7 +97,7 @@ async def handle_repo_analyzed(topic: str, message: dict):
     analysis_path = data.get("analysis_path")
 
     if not repo_id or not analysis_path or not os.path.exists(analysis_path):
-        logger.warning("Invalid repo.analyzed message", extra={"message": message})
+        logger.warning("Invalid repo.analyzed message", extra={"payload": message})
         return
 
     logger.info("Extracting capabilities", extra={"repo_id": repo_id})

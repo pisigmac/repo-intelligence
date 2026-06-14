@@ -7,6 +7,7 @@ import logging
 from datetime import datetime
 from contextlib import asynccontextmanager
 from typing import Any
+import uuid
 
 from fastapi import FastAPI
 from qdrant_client import QdrantClient
@@ -46,9 +47,10 @@ class SemanticAnalyzer:
 
     def store_embedding(self, id: str, text: str, metadata: dict):
         vec = embed_text(text)
+        point_id = str(uuid.uuid5(uuid.NAMESPACE_URL, id))
         self.qdrant.upsert(
             collection_name=self.collection_name,
-            points=[PointStruct(id=id, vector=vec, payload=metadata)],
+            points=[PointStruct(id=point_id, vector=vec, payload=metadata)],
         )
 
     def search(self, query: str, limit: int = 5) -> list[dict]:
@@ -120,7 +122,7 @@ async def handle_repo_parsed(topic: str, message: dict):
     parsed_path = data.get("parsed_path")
 
     if not repo_id or not parsed_path or not os.path.exists(parsed_path):
-        logger.warning("Invalid repo.parsed message", extra={"message": message})
+        logger.warning("Invalid repo.parsed message", extra={"payload": message})
         return
 
     logger.info("Analyzing repo", extra={"repo_id": repo_id})

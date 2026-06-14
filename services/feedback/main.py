@@ -98,7 +98,7 @@ async def process_execution_event(topic: str, message: dict):
     status = data.get("status")
 
     if not execution_id or not playbook_id:
-        logger.warning("Invalid execution.completed message", extra={"message": message})
+        logger.warning("Invalid execution.completed message", extra={"payload": message})
         return
 
     logger.info("Processing execution feedback", extra={"execution_id": execution_id, "playbook_id": playbook_id})

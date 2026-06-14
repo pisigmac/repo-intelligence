@@ -44,12 +44,12 @@ CLASSIFICATION_PATTERNS = {
 
 # JS Parsing regexes
 JS_PATTERNS = {
-    "require": re.compile(r"require\s*\(\s*['"]([^'"]+)['"]\s*\)"),
-    "import": re.compile(r"import\s+(?:(?:\{[^}]*\}|[\w*]+)\s+from\s+)?['"]([^'"]+)['"];?"),
+    "require": re.compile(r'''require\s*\(\s*['"]([^'"]+)['"]\s*\)'''),
+    "import": re.compile(r'''import\s+(?:(?:\{[^}]*\}|[\w*]+)\s+from\s+)?['"]([^'"]+)['"];?'''),
     "function_decl": re.compile(r"(?:async\s+)?function\s+(\w+)\s*\(([^)]*)\)"),
     "arrow_function": re.compile(r"(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?(?:\([^)]*\)|[^=]+)\s*=>"),
     "method": re.compile(r"(\w+)\s*\(([^)]*)\)\s*\{"),
-    "express_route": re.compile(r"(?:app|router)\.(get|post|put|delete|patch)\s*\(\s*['"]([^'"]+)['"]"),
+    "express_route": re.compile(r'''(?:app|router)\.(get|post|put|delete|patch)\s*\(\s*['"]([^'"]+)['"]'''),
     "middleware_use": re.compile(r"(?:app|router)\.use\s*\(\s*([^)]+)\)"),
     "class_decl": re.compile(r"class\s+(\w+)(?:\s+extends\s+(\w+))?"),
     "export": re.compile(r"module\.exports\s*=\s*(\w+)"),
@@ -250,7 +250,7 @@ async def handle_repo_ingested(topic: str, message: dict):
     commit = data.get("commit")
 
     if not repo_id or not storage_path:
-        logger.warning("Invalid repo.ingested message", extra={"message": message})
+        logger.warning("Invalid repo.ingested message", extra={"payload": message})
         return
 
     logger.info("Parsing repo", extra={"repo_id": repo_id, "path": storage_path})

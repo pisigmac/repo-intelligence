@@ -99,12 +99,14 @@ class KnowledgeService:
         # Store embedding in Qdrant
         text_repr = f"{playbook.name}: {playbook.description or ''}. Steps: {len(playbook.steps)}. Tags: {', '.join(tags)}"
         vec = embed_text(text_repr)
+        point_id = str(uuid.uuid5(uuid.NAMESPACE_URL, global_id))
         self.qdrant.upsert(
             collection_name=self.collection_name,
             points=[PointStruct(
-                id=global_id,
+                id=point_id,
                 vector=vec,
                 payload={
+                    "global_id": global_id,
                     "name": playbook.name,
                     "tags": tags,
                     "language": language,
@@ -113,7 +115,7 @@ class KnowledgeService:
                 }
             )],
         )
-        logger.info("Playbook indexed to knowledge", extra={"global_id": global_id})
+        logger.info("Playbook indexed to knowledge", extra={"global_id": global_id, "point_id": point_id})
 
     async def search(self, req: KnowledgeSearchRequest) -> list[dict]:
         """Search global knowledge by semantic similarity + filters."""
@@ -139,9 +141,12 @@ class KnowledgeService:
         try:
             output = []
             for r in results:
+                global_id = r.payload.get("global_id")
+                if not global_id:
+                    continue
                 res = await session.execute(
                     text("SELECT * FROM global_knowledge WHERE id = :id"),
-                    {"id": r.id}
+                    {"id": global_id}
                 )
                 row = res.mappings().first()
                 if row:

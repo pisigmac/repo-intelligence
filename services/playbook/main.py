@@ -191,7 +191,7 @@ async def handle_capability_generated(topic: str, message: dict):
     repo_id = data.get("repo")
 
     if not cap_id:
-        logger.warning("Invalid capability.generated message", extra={"message": message})
+        logger.warning("Invalid capability.generated message", extra={"payload": message})
         return
 
     logger.info("Generating playbooks", extra={"capability_id": cap_id})

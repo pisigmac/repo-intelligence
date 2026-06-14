@@ -1,7 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS repos (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id TEXT PRIMARY KEY,
     url TEXT NOT NULL,
     branch TEXT NOT NULL DEFAULT 'main',
     commit_hash TEXT,

@@ -56,5 +56,5 @@ bash scripts/stop_all.sh -y
 
 - **Docker not running:** Scripts fail fast with an error from `docker-compose`. Start Docker first.
 - **Gateway timeout:** Increase `REPO_INTEL_START_TIMEOUT`. Check service logs with `make logs`.
-- **Port conflicts:** Ensure ports `8000`, `8080`, `8081`, `5432`, `6333`, `9092`, and `19092` are free.
+- **Port conflicts:** Ensure ports `8000`, `8080`, `8081`, `5434` (Postgres host port), `6333`, `9092`, and `19092` are free.
 - **Migrations fail:** Verify the `postgres` container is healthy: `make status` or `docker-compose ps`.

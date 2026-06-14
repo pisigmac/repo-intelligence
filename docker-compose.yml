@@ -103,6 +103,7 @@ services:
       - APPROVAL_SERVICE_URL=http://approval-service:8080
       - KNOWLEDGE_SERVICE_URL=http://knowledge-service:8080
       - AGENT_ORCHESTRATOR_URL=http://agent-orchestrator:8080
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173,http://localhost:8082}
     depends_on:
       - query-service
       - execution-service

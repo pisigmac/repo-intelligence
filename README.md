@@ -48,6 +48,25 @@ make seed
 # OR: bash scripts/seed-data.sh
 ```
 
+## Web Dashboard
+
+A React dashboard is available in `ui/`.
+
+```bash
+# Development
+cd ui
+npm install
+npm run dev        # http://localhost:5173
+
+# Production build + nginx
+cd ui
+npm run build
+cd ..
+docker-compose up -d
+```
+
+The dashboard is served at `http://localhost:8082` and proxies API calls to the gateway at `http://localhost:8000`.
+
 ### Test the System
 
 ```bash

@@ -97,9 +97,19 @@ services:
     environment:
       - QUERY_SERVICE_URL=http://query-service:8080
       - EXECUTION_SERVICE_URL=http://execution-service:8080
+      - INGESTION_SERVICE_URL=http://ingestion-service:8080
+      - FEEDBACK_SERVICE_URL=http://feedback-service:8080
+      - APPROVAL_SERVICE_URL=http://approval-service:8080
+      - KNOWLEDGE_SERVICE_URL=http://knowledge-service:8080
+      - AGENT_ORCHESTRATOR_URL=http://agent-orchestrator:8080
     depends_on:
       - query-service
       - execution-service
+      - ingestion-service
+      - feedback-service
+      - approval-service
+      - knowledge-service
+      - agent-orchestrator
     <<: *service-defaults
 
   # Core Services

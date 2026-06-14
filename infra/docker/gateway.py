@@ -3,8 +3,17 @@ import os
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Repo Intelligence Gateway", version="2.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://localhost:8082"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 QUERY_URL = os.getenv("QUERY_SERVICE_URL", "http://query-service:8080")
 EXECUTION_URL = os.getenv("EXECUTION_SERVICE_URL", "http://execution-service:8080")

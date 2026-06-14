@@ -2,3 +2,7 @@
 node_modules/
 dist/
 .superpowers/
+
+# Keep the placeholder so nginx has content before the production build.
+!ui/dist/
+!ui/dist/index.html

@@ -16,23 +16,11 @@ from pydantic import BaseModel
 sys.path.insert(0, "/app")
 from libs.common import configure_logging, get_settings, KafkaProducer, KafkaConsumer
 from services.parser.models import ParsedFile, ParsedRepo
+from services.parser.language import detect_language
 from libs.utils import get_repo_files, read_file_safe
 
 settings = get_settings()
 logger = configure_logging(settings.app_name, settings.log_level)
-
-# Language mapping
-EXTENSION_MAP = {
-    ".js": "javascript",
-    ".jsx": "javascript",
-    ".ts": "typescript",
-    ".tsx": "typescript",
-    ".py": "python",
-    ".go": "go",
-    ".rs": "rust",
-    ".java": "java",
-    ".rb": "ruby",
-}
 
 # File classification patterns
 CLASSIFICATION_PATTERNS = {
@@ -55,10 +43,6 @@ JS_PATTERNS = {
     "class_decl": re.compile(r"class\s+(\w+)(?:\s+extends\s+(\w+))?"),
     "export": re.compile(r"module\.exports\s*=\s*(\w+)"),
 }
-
-
-def detect_language(file_path: Path) -> str:
-    return EXTENSION_MAP.get(file_path.suffix.lower(), "unknown")
 
 
 def classify_file(file_path: Path, content: str) -> str:

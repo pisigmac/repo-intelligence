@@ -18,6 +18,7 @@ from libs.common import configure_logging, get_settings, KafkaProducer, KafkaCon
 from services.parser.models import ParsedFile, ParsedRepo
 from services.parser.language import detect_language
 from services.parser.javascript import parse_javascript
+from services.parser.static import parse_static
 from libs.utils import get_repo_files, read_file_safe
 
 settings = get_settings()
@@ -74,15 +75,7 @@ def parse_file(file_path: Path) -> ParsedFile | None:
     elif lang == "python":
         ast = parse_python(file_path, content)
     else:
-        lines = content.splitlines()
-        loc = len([l for l in lines if l.strip()])
-        ast = {
-            "language": lang,
-            "lines_of_code": loc,
-            "functions": [],
-            "classes": [],
-            "dependencies": [],
-        }
+        ast = parse_static(file_path, lang, content)
 
     return ParsedFile(
         path=str(file_path),

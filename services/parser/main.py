@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 sys.path.insert(0, "/app")
 from libs.common import configure_logging, get_settings, KafkaProducer, KafkaConsumer
+from services.parser.models import ParsedFile, ParsedRepo
 from libs.utils import get_repo_files, read_file_safe
 
 settings = get_settings()
@@ -54,22 +55,6 @@ JS_PATTERNS = {
     "class_decl": re.compile(r"class\s+(\w+)(?:\s+extends\s+(\w+))?"),
     "export": re.compile(r"module\.exports\s*=\s*(\w+)"),
 }
-
-
-class ParsedFile(BaseModel):
-    path: str
-    language: str
-    classification: str
-    ast_summary: dict[str, Any]
-    dependencies: list[str]
-    lines_of_code: int
-
-
-class ParsedRepo(BaseModel):
-    repo_id: str
-    commit: str
-    files: list[ParsedFile]
-    dependency_graph: dict[str, list[str]]
 
 
 def detect_language(file_path: Path) -> str:

@@ -20,6 +20,7 @@ from services.parser.language import detect_language
 from services.parser.javascript import parse_javascript
 from services.parser.static import parse_static
 from services.parser.classify import classify_file
+from services.parser.graph import build_dependency_graph
 from libs.utils import get_repo_files, read_file_safe
 
 settings = get_settings()
@@ -79,27 +80,6 @@ def parse_file(file_path: Path) -> ParsedFile | None:
     )
 
 
-def build_dependency_graph(files: list[ParsedFile]) -> dict[str, list[str]]:
-    """Build a simple file-to-file dependency graph based on local imports."""
-    graph: dict[str, list[str]] = {}
-    path_map = {f.path: f for f in files}
-
-    for f in files:
-        local_deps = []
-        for dep in f.dependencies:
-            if dep.startswith(".") or dep.startswith("/"):
-                # Try to resolve local file
-                base = Path(f.path).parent
-                candidate = base / dep
-                if not candidate.suffix:
-                    for ext in [".js", ".ts", ".jsx", ".tsx", ".py"]:
-                        if str(candidate.with_suffix(ext)) in path_map:
-                            local_deps.append(str(candidate.with_suffix(ext)))
-                            break
-                elif str(candidate) in path_map:
-                    local_deps.append(str(candidate))
-        graph[f.path] = local_deps
-    return graph
 
 
 async def handle_repo_ingested(topic: str, message: dict):

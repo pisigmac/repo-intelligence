@@ -1,3 +1,4 @@
+# Web dashboard build artifacts
 node_modules/
 dist/
 .superpowers/

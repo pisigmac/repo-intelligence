@@ -20,7 +20,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [ "$BUILD" = true ]; then
+if [[ "$BUILD" = true ]]; then
   echo "Building and starting services..."
   docker-compose up -d --build
 else
@@ -37,7 +37,7 @@ bash "$SCRIPT_DIR/apply-migrations.sh"
 echo "Waiting for API gateway to be healthy..."
 bash "$SCRIPT_DIR/wait-for-healthy.sh"
 
-if [ "$SEED" = true ]; then
+if [[ "$SEED" = true ]]; then
   echo "Seeding test repository..."
   bash "$SCRIPT_DIR/seed-data.sh"
 fi

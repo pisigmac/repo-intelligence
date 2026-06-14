@@ -10,7 +10,7 @@ TIMEOUT="${REPO_INTEL_START_TIMEOUT:-120}"
 INTERVAL="${REPO_INTEL_HEALTH_INTERVAL:-2}"
 
 if ! [[ "$TIMEOUT" =~ ^[0-9]+$ ]] || ! [[ "$INTERVAL" =~ ^[0-9]+$ ]]; then
-  echo "ERROR: REPO_INTEL_START_TIMEOUT and REPO_INTEL_HEALTH_INTERVAL must be positive integers." >&2
+  echo "ERROR: REPO_INTEL_START_TIMEOUT and REPO_INTEL_HEALTH_INTERVAL must be non-negative integers." >&2
   exit 1
 fi
 

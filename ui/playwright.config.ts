@@ -8,7 +8,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:8082',
+    baseURL: 'http://localhost:8090',
     trace: 'on-first-retry',
   },
   projects: [

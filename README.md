@@ -65,7 +65,7 @@ cd ..
 docker-compose up -d
 ```
 
-The dashboard is served at `http://localhost:8082` and proxies API calls to the gateway at `http://localhost:8000`.
+The dashboard is served at `http://localhost:8090` and proxies API calls to the gateway at `http://localhost:8000`.
 
 ### Test the System
 

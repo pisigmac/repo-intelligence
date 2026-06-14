@@ -56,6 +56,10 @@ def classify_file(file_path: Path, content: str) -> str:
     for category, pattern in CLASSIFICATION_PATTERNS.items():
         scores[category] = len(pattern.findall(content))
 
+    # A file that defines routes is more specific than one that merely imports auth/middleware.
+    if scores.get("route", 0) > 0:
+        return "route"
+
     if scores:
         best = max(scores, key=scores.get)
         if scores[best] > 0:

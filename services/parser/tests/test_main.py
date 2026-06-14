@@ -1,7 +1,7 @@
 """Tests for parser service."""
 import pytest
 from pathlib import Path
-from service.main import parse_file, build_dependency_graph, ParsedFile
+from services.parser.main import parse_file, build_dependency_graph, ParsedFile
 
 
 def test_parse_javascript():
@@ -40,7 +40,7 @@ def test_build_dependency_graph():
             language="javascript",
             classification="route",
             ast_summary={},
-            dependencies=["./middleware/auth", "express"],
+            dependencies=["../middleware/auth", "express"],
             lines_of_code=10,
         ),
         ParsedFile(

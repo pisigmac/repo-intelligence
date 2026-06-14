@@ -97,9 +97,33 @@ services:
     environment:
       - QUERY_SERVICE_URL=http://query-service:8080
       - EXECUTION_SERVICE_URL=http://execution-service:8080
+      - INGESTION_SERVICE_URL=http://ingestion-service:8080
+      - PARSER_SERVICE_URL=http://parser-service:8080
+      - FEEDBACK_SERVICE_URL=http://feedback-service:8080
+      - APPROVAL_SERVICE_URL=http://approval-service:8080
+      - KNOWLEDGE_SERVICE_URL=http://knowledge-service:8080
+      - AGENT_ORCHESTRATOR_URL=http://agent-orchestrator:8080
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173,http://localhost:8082}
     depends_on:
       - query-service
       - execution-service
+      - ingestion-service
+      - parser-service
+      - feedback-service
+      - approval-service
+      - knowledge-service
+      - agent-orchestrator
+    <<: *service-defaults
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "8082:80"
+    volumes:
+      - ./ui/dist:/usr/share/nginx/html:ro
+      - ./infra/docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api-gateway
     <<: *service-defaults
 
   # Core Services

@@ -3,12 +3,23 @@ import os
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Repo Intelligence Gateway", version="2.0.0")
+
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:8082").split(",")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 QUERY_URL = os.getenv("QUERY_SERVICE_URL", "http://query-service:8080")
 EXECUTION_URL = os.getenv("EXECUTION_SERVICE_URL", "http://execution-service:8080")
 INGESTION_URL = os.getenv("INGESTION_SERVICE_URL", "http://ingestion-service:8080")
+PARSER_URL = os.getenv("PARSER_SERVICE_URL", "http://parser-service:8080")
 FEEDBACK_URL = os.getenv("FEEDBACK_SERVICE_URL", "http://feedback-service:8080")
 APPROVAL_URL = os.getenv("APPROVAL_SERVICE_URL", "http://approval-service:8080")
 KNOWLEDGE_URL = os.getenv("KNOWLEDGE_SERVICE_URL", "http://knowledge-service:8080")
@@ -58,7 +69,7 @@ async def execute(request: Request):
 
 @app.get("/parse/{repo_id}")
 async def get_parse(repo_id: str):
-    resp = await client.get(f"http://parser-service:8080/parse/{repo_id}")
+    resp = await client.get(f"{PARSER_URL}/parse/{repo_id}")
     return JSONResponse(status_code=resp.status_code, content=resp.json())
 
 # Phase 2 routes

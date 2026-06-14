@@ -19,19 +19,11 @@ from services.parser.models import ParsedFile, ParsedRepo
 from services.parser.language import detect_language
 from services.parser.javascript import parse_javascript
 from services.parser.static import parse_static
+from services.parser.classify import classify_file
 from libs.utils import get_repo_files, read_file_safe
 
 settings = get_settings()
 logger = configure_logging(settings.app_name, settings.log_level)
-
-# File classification patterns
-CLASSIFICATION_PATTERNS = {
-    "route": re.compile(r'router\.(get|post|put|delete|patch|use)\s*\(', re.IGNORECASE),
-    "middleware": re.compile(r'(middleware|verifyToken|authenticate|auth)', re.IGNORECASE),
-    "test": re.compile(r'\.(test|spec)\.(js|ts|py)', re.IGNORECASE),
-    "config": re.compile(r'(config|setup|webpack|babel|eslint|prettier|dockerfile|ci/cd)', re.IGNORECASE),
-    "controller": re.compile(r'(controller|handler|service)', re.IGNORECASE),
-}
 
 
 def parse_python(file_path: Path, content: str) -> dict[str, Any]:

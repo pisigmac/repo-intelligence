@@ -1,4 +1,4 @@
-.PHONY: build up down logs test seed clean proto start stop restart status reset migrate wait health
+.PHONY: build up down logs test seed clean proto start stop restart status reset migrate wait health setup
 
 start:
 	bash scripts/start_all.sh
@@ -23,6 +23,9 @@ wait:
 
 health:
 	bash scripts/health.sh
+
+setup:
+	bash scripts/setup.sh
 
 build:
 	docker-compose build

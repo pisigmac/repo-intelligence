@@ -1,6 +1,6 @@
 # Utility Scripts Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Add `setup.sh`, `test.sh`, and `health.sh` to `scripts/` and wire them into `Makefile` and `scripts/utilities.md`.
 
@@ -27,7 +27,7 @@
 **Files:**
 - Create: `scripts/setup.sh`
 
-- [ ] **Step 1: Create the script file**
+- [x] **Step 1: Create the script file**
 
 ```bash
 #!/usr/bin/env bash
@@ -91,21 +91,21 @@ echo "Setup complete. Start the stack with:"
 echo "  make start"
 ```
 
-- [ ] **Step 2: Make the script executable**
+- [x] **Step 2: Make the script executable**
 
 Run: `chmod +x scripts/setup.sh`
 
-- [ ] **Step 3: Verify the script runs in help mode**
+- [x] **Step 3: Verify the script runs in help mode**
 
 Run: `bash scripts/setup.sh --help`
 Expected: prints usage and exits 0.
 
-- [ ] **Step 4: Verify the script creates `.env` and builds images**
+- [x] **Step 4: Verify the script creates `.env` and builds images**
 
 Run: `rm -f .env && bash scripts/setup.sh`
 Expected: `.env` is created, `docker-compose build` runs, script exits 0.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/setup.sh
@@ -120,7 +120,7 @@ git commit -m "feat(scripts): add setup.sh for one-time local environment setup"
 **Files:**
 - Create: `scripts/test.sh`
 
-- [ ] **Step 1: Create the script file**
+- [x] **Step 1: Create the script file**
 
 ```bash
 #!/usr/bin/env bash
@@ -171,21 +171,21 @@ echo ""
 echo "All tests passed."
 ```
 
-- [ ] **Step 2: Make the script executable**
+- [x] **Step 2: Make the script executable**
 
 Run: `chmod +x scripts/test.sh`
 
-- [ ] **Step 3: Verify unit-only mode**
+- [x] **Step 3: Verify unit-only mode**
 
 Run: `bash scripts/test.sh --unit-only`
 Expected: pytest runs and exits 0 (or with existing test results).
 
-- [ ] **Step 4: Verify help mode**
+- [x] **Step 4: Verify help mode**
 
 Run: `bash scripts/test.sh --help`
 Expected: prints usage and exits 0.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/test.sh
@@ -199,7 +199,7 @@ git commit -m "feat(scripts): add test.sh for unit and integration tests"
 **Files:**
 - Create: `scripts/health.sh`
 
-- [ ] **Step 1: Create the script file**
+- [x] **Step 1: Create the script file**
 
 ```bash
 #!/usr/bin/env bash
@@ -268,22 +268,22 @@ if [[ "$UNHEALTHY" -gt 0 ]]; then
 fi
 ```
 
-- [ ] **Step 2: Make the script executable**
+- [x] **Step 2: Make the script executable**
 
 Run: `chmod +x scripts/health.sh`
 
-- [ ] **Step 3: Verify help mode**
+- [x] **Step 3: Verify help mode**
 
 Run: `bash scripts/health.sh --help`
 Expected: prints usage and exits 0.
 
-- [ ] **Step 4: Verify health check with stack running**
+- [x] **Step 4: Verify health check with stack running**
 
 Start the stack: `make start`
 Run: `bash scripts/health.sh`
 Expected: table lists services; most report healthy. Exit 0 if all healthy, 1 if any are not.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add scripts/health.sh
@@ -297,7 +297,7 @@ git commit -m "feat(scripts): add health.sh to probe all service health endpoint
 **Files:**
 - Modify: `Makefile`
 
-- [ ] **Step 1: Add new targets after the `.PHONY` line**
+- [x] **Step 1: Add new targets after the `.PHONY` line**
 
 Add these targets after the existing targets:
 
@@ -318,12 +318,12 @@ The full `.PHONY` line should become:
 .PHONY: build up down logs test seed clean proto start stop restart status reset migrate wait setup health
 ```
 
-- [ ] **Step 2: Verify `make` shows the targets**
+- [x] **Step 2: Verify `make` shows the targets**
 
 Run: `make help` if available, otherwise `grep -E '^[a-zA-Z_-]+:' Makefile | head -20`
 Expected: `setup`, `test`, and `health` appear in the list.
 
-- [ ] **Step 3: Dry-run the new targets**
+- [x] **Step 3: Dry-run the new targets**
 
 Run: `make setup --dry-run` (GNU Make) or `make -n setup`
 Expected: shows `bash scripts/setup.sh`.
@@ -331,7 +331,7 @@ Expected: shows `bash scripts/setup.sh`.
 Run: `make health --dry-run` or `make -n health`
 Expected: shows `bash scripts/health.sh`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add Makefile
@@ -345,7 +345,7 @@ git commit -m "build(makefile): add setup, test, and health targets"
 **Files:**
 - Modify: `scripts/utilities.md`
 
-- [ ] **Step 1: Add the new scripts to the scripts table**
+- [x] **Step 1: Add the new scripts to the scripts table**
 
 Insert three rows after `logs_all.sh`:
 
@@ -355,7 +355,7 @@ Insert three rows after `logs_all.sh`:
 | `health.sh` | Probe `/health` on every service and print a status table. | `bash scripts/health.sh` |
 ```
 
-- [ ] **Step 2: Add a quick-start example for the new scripts**
+- [x] **Step 2: Add a quick-start example for the new scripts**
 
 After the existing "Quick start" code block, add:
 
@@ -385,12 +385,12 @@ make health
 ```
 ```
 
-- [ ] **Step 3: Verify the markdown renders**
+- [x] **Step 3: Verify the markdown renders**
 
 Run: `cat scripts/utilities.md | head -80`
 Expected: new rows and sections are present, no broken table lines.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add scripts/utilities.md

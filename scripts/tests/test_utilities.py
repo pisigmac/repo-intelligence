@@ -18,6 +18,9 @@ UTILITIES = [
     "logs_all.sh",
     "apply-migrations.sh",
     "reset_all.sh",
+    "setup.sh",
+    "test.sh",
+    "health.sh",
 ]
 
 

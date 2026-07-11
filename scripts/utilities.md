@@ -5,6 +5,9 @@ These scripts wrap `docker-compose` commands to make local development easier. T
 ## Quick start
 
 ```bash
+# First time only: verify dependencies, create .env, build images
+make setup
+
 # Start everything, apply migrations, and seed the test repo
 make start
 # or
@@ -42,6 +45,7 @@ bash scripts/stop_all.sh -y
 | `apply-migrations.sh` | Apply `migrations/phase2.sql`. | `bash scripts/apply-migrations.sh` |
 | `reset_all.sh` | Stop, remove volumes, and recreate a fresh environment. | `bash scripts/reset_all.sh -y` |
 | `wait-for-healthy.sh` | Block until the gateway health endpoint returns 200. | `bash scripts/wait-for-healthy.sh` |
+| `setup.sh` | One-time environment setup: verify Docker, create `.env`, build images. | `bash scripts/setup.sh` |
 | `health.sh` | Probe all service health endpoints and display a colour-coded table. | `bash scripts/health.sh` |
 | `test.sh` | Run unit tests and (optionally) integration tests. | `bash scripts/test.sh --unit-only` |
 
@@ -73,6 +77,7 @@ bash scripts/stop_all.sh -y
 | `make health` | `bash scripts/health.sh` |
 | `make migrate` | `bash scripts/apply-migrations.sh` |
 | `make wait` | `bash scripts/wait-for-healthy.sh` |
+| `make setup` | `bash scripts/setup.sh` |
 | `make reset` | `bash scripts/reset_all.sh` |
 | `make logs` | `docker-compose logs -f` |
 | `make test` | `bash scripts/test.sh` (unit + integration) |

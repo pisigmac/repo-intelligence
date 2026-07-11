@@ -3,7 +3,7 @@ WORKDIR /app
 COPY libs/ /app/libs/
 COPY infra/docker/gateway.py /app/
 COPY api/openapi.yaml /app/api/
-RUN pip install fastapi uvicorn httpx PyJWT
+RUN pip install fastapi uvicorn httpx PyJWT "passlib[bcrypt]" python-multipart pydantic
 ENV PYTHONPATH=/app
 EXPOSE 8000
 CMD ["python", "-m", "gateway"]

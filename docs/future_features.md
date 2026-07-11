@@ -10,13 +10,7 @@ This document outlines high-impact features and architectural improvements to be
   - Update the Qdrant ingestion and search pipelines to use real multi-dimensional vectors.
 - **Impact:** Enables accurate natural language queries and robust cross-repo playbook retrieval based on semantic similarity.
 
-## 2. Robust AST Parsing via `tree-sitter`
-- **Context:** The `parser` service relies on regex patterns. While improved in Phase 2, regex is inherently fragile for complex, nested syntax (e.g., heavily nested callbacks, complex decorators).
-- **Action:** Replace the regex-based AST extraction with `tree-sitter`.
-- **Implementation:**
-  - Introduce `tree-sitter-python`, `tree-sitter-javascript`, and `tree-sitter-typescript` bindings.
-  - Traverse the concrete syntax tree to extract dependencies, functions, classes, and exported entities with 100% accuracy.
-- **Impact:** Eliminates edge-case parsing bugs and dramatically improves the quality of the dependency graph and extracted capabilities.
+
 
 ## 3. Webhook Integration (Continuous Intelligence)
 - **Context:** Repositories must currently be ingested manually via the API or Web UI.

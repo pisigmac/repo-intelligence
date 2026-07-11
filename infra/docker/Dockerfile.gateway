@@ -3,7 +3,7 @@ WORKDIR /app
 COPY libs/ /app/libs/
 COPY infra/docker/gateway.py /app/
 COPY api/openapi.yaml /app/api/
-RUN pip install fastapi uvicorn httpx
+RUN pip install fastapi uvicorn httpx PyJWT
 ENV PYTHONPATH=/app
 EXPOSE 8000
 CMD ["python", "-m", "gateway"]

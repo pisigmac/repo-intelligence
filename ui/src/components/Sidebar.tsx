@@ -10,8 +10,10 @@ import {
   BarChart2,
   Globe,
   Bot,
+  LogOut,
 } from 'lucide-react'
 import { useUIStore } from '../store/uiStore'
+import { useAuthStore } from '../store/authStore'
 
 const links = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -28,6 +30,7 @@ const links = [
 
 export default function Sidebar() {
   const { sidebarOpen } = useUIStore()
+  const { user, logout } = useAuthStore()
 
   return (
     <aside
@@ -54,6 +57,31 @@ export default function Sidebar() {
           </NavLink>
         ))}
       </nav>
+      
+      {user && (
+        <div className={`p-4 border-t border-slate-800 ${sidebarOpen ? 'flex' : 'hidden'} items-center justify-between`}>
+          <div className="flex items-center">
+            {user.avatar_url ? (
+              <img src={user.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full bg-slate-800" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center">
+                <span className="text-xs font-bold">{user.sub?.charAt(0).toUpperCase()}</span>
+              </div>
+            )}
+            <div className="ml-3 truncate max-w-[120px]">
+              <p className="text-sm font-medium leading-tight truncate">{user.name || user.sub}</p>
+              <p className="text-xs text-slate-400 leading-tight truncate">@{user.sub}</p>
+            </div>
+          </div>
+          <button 
+            onClick={logout}
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors"
+            title="Log out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </aside>
   )
 }

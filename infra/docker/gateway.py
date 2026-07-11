@@ -1,9 +1,11 @@
-"""API Gateway with Phase 2 routing."""
+"""API Gateway with Phase 2 routing and GitHub Auth."""
 import os
 import httpx
-from fastapi import FastAPI, Request
+
+from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from libs.auth_module import GitHubAuthenticator
 
 app = FastAPI(title="Repo Intelligence Gateway", version="2.0.0")
 
@@ -25,15 +27,28 @@ APPROVAL_URL = os.getenv("APPROVAL_SERVICE_URL", "http://approval-service:8080")
 KNOWLEDGE_URL = os.getenv("KNOWLEDGE_SERVICE_URL", "http://knowledge-service:8080")
 AGENT_URL = os.getenv("AGENT_ORCHESTRATOR_URL", "http://agent-orchestrator:8080")
 
+# --- Setup Universal Auth Module ---
+auth = GitHubAuthenticator(
+    client_id=os.getenv("GITHUB_CLIENT_ID", ""),
+    client_secret=os.getenv("GITHUB_CLIENT_SECRET", ""),
+    jwt_secret=os.getenv("JWT_SECRET_KEY", "super-secret-default-key"),
+    backend_callback_url="http://localhost:8000/auth/github/callback",
+    frontend_callback_url="http://localhost:5173/auth/callback"
+)
+
+app.include_router(auth.router, prefix="/auth/github", tags=["auth"])
+# Also expose /auth/me for frontend convenience
+app.add_api_route("/auth/me", auth.router.routes[2].endpoint, methods=["GET"], tags=["auth"])
+
 client = httpx.AsyncClient(timeout=30.0)
 
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "gateway", "version": "2.0.0"}
 
-# Phase 1 routes
+# --- Phase 1 routes ---
 @app.post("/repos")
-async def ingest_repo(request: Request):
+async def ingest_repo(request: Request, user: dict = Depends(auth.get_current_user)):
     body = await request.json()
     resp = await client.post(f"{INGESTION_URL}/repos", json=body)
     return JSONResponse(status_code=resp.status_code, content=resp.json())
@@ -62,7 +77,7 @@ async def query(request: Request):
     return JSONResponse(status_code=resp.status_code, content=resp.json())
 
 @app.post("/execute")
-async def execute(request: Request):
+async def execute(request: Request, user: dict = Depends(auth.get_current_user)):
     body = await request.json()
     resp = await client.post(f"{EXECUTION_URL}/execute", json=body)
     return JSONResponse(status_code=resp.status_code, content=resp.json())
@@ -72,7 +87,7 @@ async def get_parse(repo_id: str):
     resp = await client.get(f"{PARSER_URL}/parse/{repo_id}")
     return JSONResponse(status_code=resp.status_code, content=resp.json())
 
-# Phase 2 routes
+# --- Phase 2 routes ---
 @app.post("/feedback")
 async def submit_feedback(request: Request):
     body = await request.json()
@@ -86,12 +101,11 @@ async def get_metrics(playbook_id: str):
 
 @app.get("/playbooks/{playbook_id}/versions")
 async def get_versions(playbook_id: str):
-    # Query playbooks table for versions
     resp = await client.get(f"{QUERY_URL}/playbooks?capability_id={playbook_id}")
     return JSONResponse(status_code=resp.status_code, content=resp.json())
 
 @app.post("/playbooks/{playbook_id}/transfer")
-async def transfer_playbook(playbook_id: str, request: Request):
+async def transfer_playbook(playbook_id: str, request: Request, user: dict = Depends(auth.get_current_user)):
     body = await request.json()
     resp = await client.post(f"{KNOWLEDGE_URL}/playbooks/{playbook_id}/transfer", json=body)
     return JSONResponse(status_code=resp.status_code, content=resp.json())
@@ -103,7 +117,7 @@ async def list_approvals(request: Request):
     return JSONResponse(status_code=resp.status_code, content=resp.json())
 
 @app.post("/approvals/{approval_id}/decision")
-async def submit_approval(approval_id: str, request: Request):
+async def submit_approval(approval_id: str, request: Request, user: dict = Depends(auth.get_current_user)):
     body = await request.json()
     resp = await client.post(f"{APPROVAL_URL}/approvals/{approval_id}/decision", json=body)
     return JSONResponse(status_code=resp.status_code, content=resp.json())
@@ -114,7 +128,7 @@ async def get_approval_diff(approval_id: str):
     return JSONResponse(status_code=resp.status_code, content=resp.json())
 
 @app.post("/agents/execute")
-async def agent_execute(request: Request):
+async def agent_execute(request: Request, user: dict = Depends(auth.get_current_user)):
     body = await request.json()
     resp = await client.post(f"{AGENT_URL}/agents/execute", json=body)
     return JSONResponse(status_code=resp.status_code, content=resp.json())

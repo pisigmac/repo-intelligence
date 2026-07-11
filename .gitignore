@@ -23,9 +23,7 @@ __pycache__/
 docs/superpowers/
 
 # Vault and IDE artifacts
-.vault/staging/
-.vault/index/
-.vault/archive/*.tmp
+.vault/
 .gemini/
 .DS_Store
 Thumbs.db

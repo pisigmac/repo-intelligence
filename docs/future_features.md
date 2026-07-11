@@ -12,14 +12,7 @@ This document outlines high-impact features and architectural improvements to be
 
 
 
-## 3. Webhook Integration (Continuous Intelligence)
-- **Context:** Repositories must currently be ingested manually via the API or Web UI.
-- **Action:** Add webhook receivers to the `ingestion-service`.
-- **Implementation:**
-  - Create endpoints to accept GitHub/GitLab webhook payloads (`push`, `pull_request`).
-  - Automatically trigger the ingestion pipeline for new commits.
-  - (Optional) Have the agent orchestrator automatically review code changes or optimize playbooks in the background based on PR diffs.
-- **Impact:** Transforms the platform from a manual tool into a continuous, autonomous intelligence agent.
+
 
 ## 4. Secure Execution Environments (Sandboxing)
 - **Context:** The `execution-service` modifies code and runs tests, currently executing within its own environment context.

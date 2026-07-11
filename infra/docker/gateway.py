@@ -87,6 +87,13 @@ async def ingest_repo(request: Request, user: dict = Depends(get_current_user)):
     resp = await client.post(f"{INGESTION_URL}/repos", json=body)
     return JSONResponse(status_code=resp.status_code, content=resp.json())
 
+@app.post("/webhooks/github")
+async def github_webhook(request: Request):
+    body = await request.json()
+    headers = dict(request.headers)
+    resp = await client.post(f"{INGESTION_URL}/webhooks/github", json=body, headers=headers)
+    return JSONResponse(status_code=resp.status_code, content=resp.json())
+
 @app.get("/repos/{repo_id}")
 async def get_repo(repo_id: str):
     resp = await client.get(f"{INGESTION_URL}/repos/{repo_id}")

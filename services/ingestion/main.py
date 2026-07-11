@@ -157,6 +157,57 @@ async def get_repo(repo_id: str, session: AsyncSession = Depends(get_db)):
         "updated_at": row.updated_at.isoformat() if row.updated_at else None,
     }
 
+from fastapi import Request
+
+@app.post("/webhooks/github", status_code=202)
+async def github_webhook(
+    request: Request,
+    background: BackgroundTasks,
+    session: AsyncSession = Depends(get_db),
+):
+    event_type = request.headers.get("X-GitHub-Event", "unknown")
+    if event_type == "ping":
+        return {"status": "pong"}
+        
+    if event_type != "push":
+        # Only process push events for continuous ingestion
+        return {"status": "ignored", "reason": "not a push event"}
+
+    payload = await request.json()
+    
+    # Extract repo details
+    repo_data = payload.get("repository", {})
+    git_url = repo_data.get("clone_url")
+    
+    if not git_url:
+        raise HTTPException(status_code=400, detail="Missing repository clone_url")
+        
+    # Extract branch from ref (e.g., refs/heads/main)
+    ref = payload.get("ref", "")
+    branch = ref.replace("refs/heads/", "") if ref.startswith("refs/heads/") else "main"
+    
+    req = IngestRequest(git_url=git_url, branch=branch)
+    
+    job_id = str(uuid.uuid4())
+    repo_id = str(uuid.uuid4())
+
+    repo = RepoORM(
+        id=repo_id,
+        url=req.git_url,
+        branch=req.branch,
+        status="pending",
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    session.add(repo)
+    await session.commit()
+
+    background.add_task(_process_ingestion, job_id, repo_id, req)
+
+    logger.info("GitHub webhook triggered ingestion", extra={"repo_id": repo_id, "url": git_url, "branch": branch})
+    return {"status": "queued", "job_id": job_id, "repo_id": repo_id}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8080)

@@ -1,0 +1,10 @@
+version: '1.0'
+jobs:
+- skill: archive-stale
+  schedule: 0 2 * * 0
+  description: Archive files older than 120 days
+  enabled: true
+- skill: health-check
+  schedule: 0 9 * * 1
+  description: Weekly vault health report
+  enabled: true

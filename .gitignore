@@ -1,23 +1,5 @@
-# Web dashboard build artifacts
-node_modules/
-dist/
-.superpowers/
-
-# Git worktrees
-.worktrees/
-
-# Python virtual environments
-.venv/
-venv/
-
-# Python cache
-__pycache__/
-*.pyc
-
-# Temporary repo clones for testing
-.tmp-repos/
-
-# Keep the placeholder so nginx has content before the production build.
-!ui/dist/
-!ui/dist/index.html
-docs/superpowers/
+.vault/staging/
+.vault/index/
+.vault/archive/*.tmp
+.DS_Store
+Thumbs.db

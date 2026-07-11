@@ -96,9 +96,12 @@ def parse_js_ts_ast(content: str, is_typescript: bool = False) -> dict:
         (lexical_declaration (variable_declarator name: (identifier) @func_name value: (arrow_function parameters: (formal_parameters) @params) @arrow_val)) @arrow_def
     """)
     
-    query_classes = lang.query("""
-        (class_declaration name: (identifier) @class_name (class_heritage (identifier) @superclass)?) @class_def
-    """)
+    class_query_str = """
+        (class_declaration name: (type_identifier) @class_name) @class_def
+    """ if is_typescript else """
+        (class_declaration name: (identifier) @class_name) @class_def
+    """
+    query_classes = lang.query(class_query_str)
     
     query_imports = lang.query("""
         (import_statement source: (string (string_fragment) @import_path))
@@ -106,13 +109,20 @@ def parse_js_ts_ast(content: str, is_typescript: bool = False) -> dict:
          (#eq? @req_id "require"))
     """)
     
-    query_exports = lang.query("""
+    export_query_str = """
+        (export_statement (identifier) @export_name)
+        (export_statement (export_clause (export_specifier (identifier) @export_name)))
+        (export_statement declaration: (function_declaration name: (identifier) @export_name))
+        (export_statement declaration: (class_declaration name: (type_identifier) @export_name))
+        (export_statement declaration: (lexical_declaration (variable_declarator name: (identifier) @export_name)))
+    """ if is_typescript else """
         (export_statement (identifier) @export_name)
         (export_statement (export_clause (export_specifier (identifier) @export_name)))
         (export_statement declaration: (function_declaration name: (identifier) @export_name))
         (export_statement declaration: (class_declaration name: (identifier) @export_name))
         (export_statement declaration: (lexical_declaration (variable_declarator name: (identifier) @export_name)))
-    """)
+    """
+    query_exports = lang.query(export_query_str)
     
     functions = []
     # Process functions, methods, arrow functions
@@ -152,9 +162,11 @@ def parse_js_ts_ast(content: str, is_typescript: bool = False) -> dict:
             name_node = node.child_by_field_name("name")
             if name_node:
                 extends = None
-                heritage_node = node.child_by_field_name("heritage")
-                if heritage_node:
-                    extends = heritage_node.text.decode("utf-8").replace("extends ", "").strip()
+                for child in node.children:
+                    if child.type == "class_heritage":
+                        # Usually it contains an identifier or member_expression
+                        extends = child.text.decode("utf-8").replace("extends ", "").strip()
+                        break
                 classes.append({
                     "name": name_node.text.decode("utf-8"),
                     "extends": extends
@@ -186,7 +198,7 @@ def parse_js_ts_ast(content: str, is_typescript: bool = False) -> dict:
         routes.append({"method": match.group(1).upper(), "path": match.group(2)})
         
     middlewares = []
-    for match in re.finditer(r"(?:app|router)\.use\s*\(\s*([^)]+)\)", content):
+    for match in re.finditer(r"(?:app|router)\.use\s*\((.*)\);?", content):
         middlewares.append(match.group(1).strip())
         
     lines = content.splitlines()

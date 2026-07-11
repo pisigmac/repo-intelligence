@@ -1,0 +1,52 @@
+<h2>Proposed Dashboard Layout</h2>
+<p class="subtitle">Full control plane with a persistent sidebar and detail panels.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Repo Intelligence Dashboard</div>
+  <div class="mockup-body" style="display: flex; min-height: 60vh;">
+    <div class="mock-sidebar" style="width: 180px;">
+      <div style="font-weight: bold; margin-bottom: 1rem;">Repo Intel</div>
+      <div>Dashboard</div>
+      <div>Repos</div>
+      <div>Capabilities</div>
+      <div>Playbooks</div>
+      <div>Query</div>
+      <div>Execute</div>
+      <div>Approvals</div>
+      <div>Feedback</div>
+      <div>Knowledge</div>
+      <div>Agents</div>
+    </div>
+    <div class="mock-content" style="flex: 1; padding: 1rem;">
+      <div class="label">REPOSITORIES</div>
+      <h3>Connected Repositories</h3>
+      <div class="mock-input" style="width: 300px; margin-bottom: 1rem;">Filter repos...</div>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid #ccc;">
+          <th style="text-align:left;">URL</th>
+          <th style="text-align:left;">Status</th>
+          <th style="text-align:left;">Capabilities</th>
+          <th style="text-align:left;">Playbooks</th>
+        </tr>
+        <tr>
+          <td>node-js-getting-started</td>
+          <td><span style="color: green;">● analyzed</span></td>
+          <td>1</td>
+          <td>2</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Architecture Highlights</h3>
+  <ul>
+    <li><strong>Stack:</strong> React 18 + Vite + React Router + TanStack Query + Tailwind CSS</li>
+    <li><strong>Location:</strong> new <code>ui/</code> directory at repo root</li>
+    <li><strong>Serving:</strong> production build served by a new <code>nginx</code> container; dev mode via Vite proxy to gateway</li>
+    <li><strong>API client:</strong> auto-generated from <code>api/openapi.yaml</code> (or hand-written Axios wrapper)</li>
+    <li><strong>State:</strong> server state in TanStack Query; local UI state in React context or Zustand</li>
+    <li><strong>Real-time:</strong> approvals page subscribes to gateway WebSocket</li>
+  </ul>
+</div>

@@ -1,0 +1,145 @@
+version: '1.0'
+auto_archive_days: 120
+archive_hidden: true
+directories:
+- name: projects
+  description: Active work, long-lived context
+  path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/projects
+  vault_path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/projects
+  archive_after_days: 120
+  required_frontmatter:
+  - id
+  - created
+  - modified
+  - tags
+  - status
+  - source
+  required_sections: []
+  templates:
+  - vault/templates/projects.md
+- name: goals
+  description: OKRs and objectives
+  path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/goals
+  vault_path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/goals
+  archive_after_days: 365
+  required_frontmatter:
+  - id
+  - created
+  - modified
+  - tags
+  - status
+  - source
+  required_sections: []
+  templates:
+  - vault/templates/goals.md
+- name: people
+  description: Contacts and collaborators
+  path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/people
+  vault_path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/people
+  archive_after_days: 0
+  required_frontmatter:
+  - id
+  - created
+  - modified
+  - tags
+  - status
+  - source
+  required_sections: []
+  templates:
+  - vault/templates/people.md
+- name: meetings
+  description: Meeting notes and action items
+  path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/meetings
+  vault_path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/meetings
+  archive_after_days: 90
+  required_frontmatter:
+  - id
+  - created
+  - modified
+  - tags
+  - status
+  - source
+  required_sections: []
+  templates:
+  - vault/templates/meetings.md
+- name: decisions
+  description: Architecture decisions and ADRs
+  path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/decisions
+  vault_path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/decisions
+  archive_after_days: 0
+  required_frontmatter:
+  - id
+  - created
+  - modified
+  - tags
+  - status
+  - source
+  required_sections: []
+  templates:
+  - vault/templates/decisions.md
+- name: resources
+  description: Bookmarks, articles, references
+  path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/resources
+  vault_path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/resources
+  archive_after_days: 180
+  required_frontmatter:
+  - id
+  - created
+  - modified
+  - tags
+  - status
+  - source
+  required_sections: []
+  templates:
+  - vault/templates/resources.md
+- name: experiments
+  description: Ephemeral prototypes
+  path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/experiments
+  vault_path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/experiments
+  archive_after_days: 30
+  required_frontmatter:
+  - id
+  - created
+  - modified
+  - tags
+  - status
+  - source
+  required_sections: []
+  templates:
+  - vault/templates/experiments.md
+- name: threads
+  description: Conversation histories
+  path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/threads
+  vault_path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/threads
+  archive_after_days: 120
+  required_frontmatter:
+  - id
+  - created
+  - modified
+  - tags
+  - status
+  - source
+  required_sections: []
+  templates:
+  - vault/templates/threads.md
+- name: reviews
+  description: Retrospectives and weekly reviews
+  path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/reviews
+  vault_path: /home/oh20210736-ud/Documents/Kimi_projects/In_progress/git/repo-intelligence/reviews
+  archive_after_days: 365
+  required_frontmatter:
+  - id
+  - created
+  - modified
+  - tags
+  - status
+  - source
+  required_sections: []
+  templates:
+  - vault/templates/reviews.md
+git_remote: ''
+providers:
+- codex
+- claude
+- cursor
+- openai

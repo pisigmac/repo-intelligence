@@ -105,19 +105,69 @@ class StepExecutor:
     def _handle_run_tests(self, target_path: str, payload: dict) -> tuple[str, str]:
         cmd = payload.get("command", "npm test")
         cwd = target_path if os.path.isdir(target_path) else os.path.dirname(target_path)
-        result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=120)
-        output = result.stdout + "\n" + result.stderr
-        if result.returncode == 0:
-            return "completed", f"Tests passed\n{output[:500]}"
-        return "failed", f"Tests failed\n{output[:1000]}"
+        image = payload.get("image", "node:18-alpine")
+        
+        try:
+            import docker
+            client = docker.from_env()
+            # Basic Sandboxing: Mount only the repos volume, disable network
+            # if we wanted strict no-network, we'd use network_mode="none". 
+            # But tests might need to download packages, so we'll leave bridge network.
+            output_bytes = client.containers.run(
+                image=image,
+                command=["sh", "-c", cmd],
+                volumes={"repo-intelligence_repo_storage": {"bind": "/data/repos", "mode": "rw"}},
+                working_dir=cwd,
+                remove=True
+            )
+            output = output_bytes.decode("utf-8")
+            return "completed", f"Tests passed (Sandboxed)\n{output[:500]}"
+        except ImportError:
+            # Fallback to local execution if docker-py is missing
+            result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=120)
+            output = result.stdout + "\n" + result.stderr
+            if result.returncode == 0:
+                return "completed", f"Tests passed\n{output[:500]}"
+            return "failed", f"Tests failed\n{output[:1000]}"
+        except Exception as e:
+            if hasattr(e, "stderr") and e.stderr:
+                output = e.stderr.decode("utf-8")
+            elif hasattr(e, "stdout") and e.stdout:
+                output = e.stdout.decode("utf-8")
+            else:
+                output = str(e)
+            return "failed", f"Tests failed (Sandboxed)\n{output[:1000]}"
 
     def _handle_validate_syntax(self, target_path: str, payload: dict) -> tuple[str, str]:
-        cmd = payload.get("command", f"node --check {target_path}")
+        # We need the relative path from cwd for syntax validation
         cwd = os.path.dirname(target_path) if os.path.isfile(target_path) else target_path
-        result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=30)
-        if result.returncode == 0:
-            return "completed", "Syntax valid"
-        return "failed", f"Syntax error: {result.stderr[:500]}"
+        file_name = os.path.basename(target_path) if os.path.isfile(target_path) else "."
+        cmd = payload.get("command", f"node --check {file_name}")
+        image = payload.get("image", "node:18-alpine")
+
+        try:
+            import docker
+            client = docker.from_env()
+            client.containers.run(
+                image=image,
+                command=["sh", "-c", cmd],
+                volumes={"repo-intelligence_repo_storage": {"bind": "/data/repos", "mode": "rw"}},
+                working_dir=cwd,
+                remove=True,
+                network_mode="none" # syntax validation definitely shouldn't need network
+            )
+            return "completed", "Syntax valid (Sandboxed)"
+        except ImportError:
+            result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=30)
+            if result.returncode == 0:
+                return "completed", "Syntax valid"
+            return "failed", f"Syntax error: {result.stderr[:500]}"
+        except Exception as e:
+            if hasattr(e, "stderr") and e.stderr:
+                err = e.stderr.decode("utf-8")
+            else:
+                err = str(e)
+            return "failed", f"Syntax error (Sandboxed): {err[:500]}"
 
     def _handle_git_commit(self, target_path: str, payload: dict) -> tuple[str, str]:
         msg = payload.get("message", "automated commit")

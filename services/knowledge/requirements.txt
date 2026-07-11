@@ -8,3 +8,4 @@ aiokafka==0.9.0
 python-json-logger==2.0.7
 qdrant-client==1.7.0
 numpy==1.26.3
+sentence-transformers==2.2.2

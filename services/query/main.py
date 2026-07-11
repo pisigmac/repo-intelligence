@@ -20,11 +20,7 @@ settings = get_settings()
 logger = configure_logging(settings.app_name, settings.log_level)
 
 
-def embed_text(text: str, dim: int = 384) -> list[float]:
-    np.random.seed(hash(text) % (2**32))
-    vec = np.random.randn(dim).astype(np.float32)
-    vec = vec / np.linalg.norm(vec)
-    return vec.tolist()
+from libs.common.embeddings import get_embedding
 
 
 class QueryRequest(BaseModel):
@@ -40,7 +36,7 @@ class QueryService:
 
     def semantic_search(self, query: str, limit: int = 10) -> list[dict]:
         try:
-            vec = embed_text(query)
+            vec = get_embedding(query)
             results = self.qdrant.search(
                 collection_name=self.collection,
                 query_vector=vec,

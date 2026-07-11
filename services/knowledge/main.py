@@ -26,11 +26,7 @@ settings = get_settings()
 logger = configure_logging(settings.app_name, settings.log_level)
 
 
-def embed_text(text: str, dim: int = 384) -> list[float]:
-    np.random.seed(hash(text) % (2**32))
-    vec = np.random.randn(dim).astype(np.float32)
-    vec = vec / np.linalg.norm(vec)
-    return vec.tolist()
+from libs.common.embeddings import get_embedding
 
 
 class KnowledgeSearchRequest(BaseModel):
@@ -98,7 +94,7 @@ class KnowledgeService:
 
         # Store embedding in Qdrant
         text_repr = f"{playbook.name}: {playbook.description or ''}. Steps: {len(playbook.steps)}. Tags: {', '.join(tags)}"
-        vec = embed_text(text_repr)
+        vec = get_embedding(text_repr)
         point_id = str(uuid.uuid5(uuid.NAMESPACE_URL, global_id))
         self.qdrant.upsert(
             collection_name=self.collection_name,
@@ -121,7 +117,7 @@ class KnowledgeService:
         """Search global knowledge by semantic similarity + filters."""
         # Semantic search
         query_text = req.query or " ".join(req.tags)
-        vec = embed_text(query_text)
+        vec = get_embedding(query_text)
 
         filter_conditions = []
         if req.language:

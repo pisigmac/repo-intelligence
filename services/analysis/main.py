@@ -12,21 +12,13 @@ import uuid
 from fastapi import FastAPI
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
-import numpy as np
 
 sys.path.insert(0, "/app")
 from libs.common import configure_logging, get_settings, KafkaProducer, KafkaConsumer
+from libs.common.embeddings import get_embedding
 
 settings = get_settings()
 logger = configure_logging(settings.app_name, settings.log_level)
-
-# Simple deterministic embedding for MVP (replace with real model in production)
-def embed_text(text: str, dim: int = 384) -> list[float]:
-    """Deterministic embedding using hash-based projection."""
-    np.random.seed(hash(text) % (2**32))
-    vec = np.random.randn(dim).astype(np.float32)
-    vec = vec / np.linalg.norm(vec)
-    return vec.tolist()
 
 
 class SemanticAnalyzer:
@@ -46,7 +38,7 @@ class SemanticAnalyzer:
             logger.info("Created Qdrant collection", extra={"name": self.collection_name})
 
     def store_embedding(self, id: str, text: str, metadata: dict):
-        vec = embed_text(text)
+        vec = get_embedding(text)
         point_id = str(uuid.uuid5(uuid.NAMESPACE_URL, id))
         self.qdrant.upsert(
             collection_name=self.collection_name,
@@ -54,7 +46,7 @@ class SemanticAnalyzer:
         )
 
     def search(self, query: str, limit: int = 5) -> list[dict]:
-        vec = embed_text(query)
+        vec = get_embedding(query)
         results = self.qdrant.search(
             collection_name=self.collection_name,
             query_vector=vec,

@@ -13,42 +13,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 
 from services.parser.models import ParsedFile
 from services.parser.language import detect_language
-from services.parser.javascript import parse_javascript
 from services.parser.static import parse_static
 from services.parser.classify import classify_file
 from services.parser.graph import build_dependency_graph  # re-exported for convenience
+from services.parser.treesitter_parser import parse_python_ast, parse_js_ts_ast
 from libs.utils import read_file_safe
-
-import re
-
-
-def parse_python(file_path: Path, content: str) -> dict[str, Any]:
-    """Extract an AST summary from a Python source file."""
-    lines = content.splitlines()
-    loc = len([l for l in lines if l.strip() and not l.strip().startswith("#")])
-
-    import_pattern = re.compile(r"^(?:from|import)\s+([\w.]+)")
-    deps = [m for m in import_pattern.findall(content) if not m.startswith(".")]
-
-    func_pattern = re.compile(r"(?:async\s+)?def\s+(\w+)\(([^)]*)\):")
-    functions = []
-    for match in func_pattern.finditer(content):
-        functions.append({
-            "name": match.group(1),
-            "signature": f"{match.group(1)}({match.group(2)})",
-            "async": "async" in content[max(0, match.start() - 10):match.start()],
-        })
-
-    class_pattern = re.compile(r"class\s+(\w+)(?:\(([^)]*)\))?:")
-    classes = [{"name": m[0], "extends": m[1]} for m in class_pattern.findall(content)]
-
-    return {
-        "language": "python",
-        "lines_of_code": loc,
-        "functions": functions,
-        "classes": classes,
-        "dependencies": list(set(deps)),
-    }
 
 
 def parse_file(file_path: Path) -> ParsedFile | None:
@@ -60,10 +29,12 @@ def parse_file(file_path: Path) -> ParsedFile | None:
     lang = detect_language(file_path)
     classification = classify_file(file_path, content)
 
-    if lang in ("javascript", "typescript"):
-        ast = parse_javascript(file_path, content)
+    if lang == "javascript":
+        ast = parse_js_ts_ast(content, is_typescript=False)
+    elif lang == "typescript":
+        ast = parse_js_ts_ast(content, is_typescript=True)
     elif lang == "python":
-        ast = parse_python(file_path, content)
+        ast = parse_python_ast(content)
     else:
         ast = parse_static(file_path, lang, content)
 
@@ -77,4 +48,4 @@ def parse_file(file_path: Path) -> ParsedFile | None:
     )
 
 
-__all__ = ["parse_file", "parse_python", "build_dependency_graph"]
+__all__ = ["parse_file", "build_dependency_graph"]

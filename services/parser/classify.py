@@ -31,6 +31,15 @@ FILENAME_CLASSIFICATION = {
 }
 
 
+def _has_definitions(content: str) -> bool:
+    """Return True if the content declares functions or classes."""
+    return bool(
+        re.search(r"(?:async\s+)?def\s+\w+\s*\(", content)
+        or re.search(r"class\s+\w+", content)
+        or re.search(r"(?:async\s+)?function\s+\w+\s*\(", content)
+    )
+
+
 def classify_file(file_path: Path, content: str) -> str:
     lower_name = file_path.name.lower()
     if lower_name in FILENAME_CLASSIFICATION:
@@ -39,6 +48,9 @@ def classify_file(file_path: Path, content: str) -> str:
     ext = file_path.suffix.lower()
     if ext in EXTENSION_CLASSIFICATION:
         return EXTENSION_CLASSIFICATION[ext]
+
+    if lower_name == "__init__.py" and not _has_definitions(content):
+        return "utility"
 
     fname = lower_name
     if CLASSIFICATION_PATTERNS["test"].search(fname):

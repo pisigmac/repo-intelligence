@@ -18,3 +18,12 @@ def test_typescript_components():
 
 def test_tests():
     assert classify_file(Path("App.test.tsx"), 'test("x", () => {})') == "test"
+
+
+def test_init_reexport_utility():
+    content = '''from .cats.controller import CatsController
+from .cats.service import CatsService
+
+__all__ = ["CatsController", "CatsService"]
+'''
+    assert classify_file(Path("src/cats/__init__.py"), content) == "utility"

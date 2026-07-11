@@ -60,14 +60,28 @@ def analyze(name: str, parsed: list, graph: dict):
 
     # External vs local dependencies
     external_deps = Counter()
+    
+    def _is_resolved(path: str, dep: str, path_map: set) -> bool:
+        if not (dep.startswith(".") or dep.startswith("/")):
+            return True
+        base = Path(path).parent
+        candidate = Path(os.path.normpath(base / dep))
+        if str(candidate) in path_map:
+            return True
+        for ext in [".tsx", ".ts", ".jsx", ".js", ".py"]:
+            if str(candidate.with_suffix(ext)) in path_map:
+                return True
+        for ext in [".tsx", ".ts", ".jsx", ".js", ".py"]:
+            if str((candidate / "index").with_suffix(ext)) in path_map:
+                return True
+        return False
+
     unresolved_local = []
+    path_map = {f.path for f in parsed}
     for f in parsed:
-        resolved = set(graph.get(f.path, []))
-        resolved_basenames = {Path(r).stem for r in resolved}
         for dep in f.dependencies:
             if dep.startswith(".") or dep.startswith("/"):
-                dep_stem = Path(dep).stem
-                if dep_stem not in resolved_basenames:
+                if not _is_resolved(f.path, dep, path_map):
                     unresolved_local.append((f.path, dep))
             else:
                 external_deps[dep] += 1

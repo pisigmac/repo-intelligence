@@ -1,7 +1,8 @@
 """Tests for parser service."""
 import pytest
 from pathlib import Path
-from services.parser.main import parse_file, build_dependency_graph, ParsedFile
+from services.parser.core import parse_file, build_dependency_graph
+from services.parser.models import ParsedFile
 
 
 def test_parse_javascript():

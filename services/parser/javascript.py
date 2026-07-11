@@ -11,7 +11,7 @@ JS_PATTERNS = {
     "arrow_function": re.compile(
         r"(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?(?:\([^)]*\)|[^=]+)\s*=>"
     ),
-    "method": re.compile(r"(\w+)\s*\(([^)]*)\)\s*\{"),
+    "method": re.compile(r"(\w+)\s*\((.*)\)(?:\s*:\s*[^{]+)?\s*\{"),
     "express_route": re.compile(
         r'''(?:app|router)\.(get|post|put|delete|patch)\s*\(\s*['"]([^'"]+)['"]'''
     ),
@@ -19,6 +19,9 @@ JS_PATTERNS = {
     "class_decl": re.compile(r"(?:export\s+)?class\s+(\w+)(?:\s+extends\s+(\w+))?"),
     "export_default": re.compile(r"export\s+default\s+(?:function\s+)?(\w+)"),
     "export_named": re.compile(r"export\s+\{([^}]+)\}"),
+    "decorator": re.compile(r"@(\w+)(?:\s*\(([^)]*)\))?"),
+    "anonymous_function": re.compile(r"function\s*\(([^)]*)\)\s*\{"),
+    "arrow_callback": re.compile(r"\(([^)]*)\)\s*=>\s*\{"),
 }
 
 
@@ -44,6 +47,23 @@ def _count_loc(content: str) -> int:
     return count
 
 
+def _decorators_before(content: str, pos: int) -> list[str]:
+    """Collect decorators immediately before a declaration at `pos`."""
+    prefix = content[:pos]
+    lines = prefix.splitlines()
+    decorators: list[str] = []
+    for line in reversed(lines):
+        stripped = line.strip()
+        if not stripped:
+            continue
+        match = JS_PATTERNS["decorator"].match(stripped)
+        if match:
+            decorators.append(match.group(1))
+        else:
+            break
+    return list(reversed(decorators))
+
+
 def parse_javascript(file_path: Path, content: str) -> dict:
     loc = _count_loc(content)
 
@@ -59,6 +79,25 @@ def parse_javascript(file_path: Path, content: str) -> dict:
             "name": match.group(1),
             "signature": f"{match.group(1)}({match.group(2)})",
             "async": "async" in prefix,
+            "decorators": _decorators_before(content, match.start()),
+        })
+
+    for match in JS_PATTERNS["anonymous_function"].finditer(content):
+        functions.append({
+            "type": "anonymous_function",
+            "name": None,
+            "signature": f"({match.group(1)})",
+            "async": False,
+            "decorators": _decorators_before(content, match.start()),
+        })
+
+    for match in JS_PATTERNS["arrow_callback"].finditer(content):
+        functions.append({
+            "type": "arrow_function",
+            "name": None,
+            "signature": f"({match.group(1)})",
+            "async": False,
+            "decorators": _decorators_before(content, match.start()),
         })
 
     for match in JS_PATTERNS["arrow_function"].finditer(content):
@@ -67,6 +106,16 @@ def parse_javascript(file_path: Path, content: str) -> dict:
             "name": match.group(1),
             "signature": f"{match.group(1)}()",
             "async": False,
+            "decorators": _decorators_before(content, match.start()),
+        })
+
+    for match in JS_PATTERNS["method"].finditer(content):
+        functions.append({
+            "type": "method",
+            "name": match.group(1),
+            "signature": f"{match.group(1)}({match.group(2)})",
+            "async": False,
+            "decorators": _decorators_before(content, match.start()),
         })
 
     routes = []
@@ -85,6 +134,7 @@ def parse_javascript(file_path: Path, content: str) -> dict:
         classes.append({
             "name": match.group(1),
             "extends": match.group(2),
+            "decorators": _decorators_before(content, match.start()),
         })
 
     exports = []

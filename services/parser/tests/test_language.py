@@ -20,3 +20,37 @@ def test_static_files():
 
 def test_unknown_extension():
     assert detect_language(Path("README")) == "unknown"
+
+
+def test_modern_extensions():
+    assert detect_language(Path("src/utils.mjs")) == "javascript"
+    assert detect_language(Path("src/legacy.cjs")) == "javascript"
+    assert detect_language(Path("schema.gql")) == "graphql"
+    assert detect_language(Path("api.graphql")) == "graphql"
+    assert detect_language(Path("types.pyi")) == "python"
+    assert detect_language(Path("logo.svg")) == "svg"
+    assert detect_language(Path("uv.lock")) == "lockfile"
+    assert detect_language(Path("requirements.txt")) == "text"
+    assert detect_language(Path("test.ambr")) == "snapshot"
+    assert detect_language(Path("notebook.ipynb")) == "json"
+    assert detect_language(Path("README.rst")) == "markdown"
+    assert detect_language(Path("App.svelte")) == "svelte"
+    assert detect_language(Path("App.vue")) == "vue"
+    assert detect_language(Path("Program.cs")) == "csharp"
+    assert detect_language(Path("main.cpp")) == "cpp"
+
+
+def test_common_dotfiles_and_filenames():
+    assert detect_language(Path(".eslintignore")) == "gitignore"
+    assert detect_language(Path(".npmignore")) == "gitignore"
+    assert detect_language(Path(".prettierignore")) == "gitignore"
+    assert detect_language(Path(".dockerignore")) == "gitignore"
+    assert detect_language(Path(".editorconfig")) == "config"
+    assert detect_language(Path(".gitattributes")) == "config"
+    assert detect_language(Path(".prettierrc")) == "config"
+    assert detect_language(Path(".eslintrc")) == "config"
+    assert detect_language(Path(".babelrc")) == "config"
+    assert detect_language(Path(".npmrc")) == "config"
+    assert detect_language(Path("CODEOWNERS")) == "config"
+    assert detect_language(Path("CITATION.cff")) == "citation"
+    assert detect_language(Path("LICENSE")) == "documentation"

@@ -1,4 +1,4 @@
-.PHONY: build up down logs test seed clean proto start stop restart status reset migrate wait
+.PHONY: build up down logs test seed clean proto start stop restart status reset migrate wait health
 
 start:
 	bash scripts/start_all.sh
@@ -21,6 +21,9 @@ migrate:
 wait:
 	bash scripts/wait-for-healthy.sh
 
+health:
+	bash scripts/health.sh
+
 build:
 	docker-compose build
 
@@ -34,7 +37,13 @@ logs:
 	docker-compose logs -f
 
 test:
-	pytest services/*/tests/ -v
+	bash scripts/test.sh
+
+test-unit:
+	bash scripts/test.sh --unit-only
+
+test-parser:
+	bash scripts/test.sh --parser-only
 
 seed:
 	bash scripts/seed-data.sh

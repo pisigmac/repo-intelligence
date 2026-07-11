@@ -2,6 +2,21 @@
 
 This document is written for AI coding agents. It describes the project structure, technology stack, build/test workflows, and conventions you need to know before modifying code.
 
+## Current Session Context
+
+> Updated before parser improvements implementation.
+
+- **Latest merged work:** React web dashboard (`ui/`) is on `main`. Dashboard is served by the `nginx` container on host port **`8090`** (changed from `8082`). Gateway CORS defaults include `http://localhost:8090`.
+- **Current focus:** Fix parser anomalies observed while ingesting `https://github.com/pisigmac/devpet`.
+- **Plan document:** `docs/superpowers/plans/2026-06-14-parser-improvements.md`.
+- **Known parser issues:**
+  - TypeScript/TSX files fall into the generic parser branch, so `functions`, `classes`, and `dependencies` are empty.
+  - Static/config files (`.html`, `.css`, `.json`, `.yaml`, `.toml`, `.sql`, `.md`, `.gitignore`, `Dockerfile`) are reported as `language: "unknown"`.
+  - File classification is unreliable (e.g., `index.html` → `middleware`, `extension.ts` → `config`).
+  - Dependency graph is empty because TS imports are not extracted.
+  - JS/TS export parsing misses `export function`, `export class`, and `export default`.
+- **Do not implement parser fixes without reading the plan document first.**
+
 ## Project Overview
 
 Repo Intelligence Platform is a production-oriented, self-evolving distributed intelligence system. It ingests Git repositories, compiles them into **Capabilities** (WHAT the codebase can do) and **Playbooks** (HOW to perform changes), and lets AI agents autonomously reason about, execute, and improve codebases.

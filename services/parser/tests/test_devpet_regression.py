@@ -1,5 +1,5 @@
 from pathlib import Path
-from services.parser.main import parse_file, build_dependency_graph
+from services.parser.core import parse_file, build_dependency_graph
 
 SAMPLES = Path("services/parser/tests/fixtures/devpet-samples")
 

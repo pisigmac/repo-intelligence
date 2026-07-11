@@ -35,11 +35,4 @@ This document outlines high-impact features and architectural improvements to be
   - Implement strict resource limits and network constraints for the sandboxed environments.
 - **Impact:** Safely allows the platform to run arbitrary build scripts, tests, and code generation tasks across multiple languages without compromising the host service.
 
-## 5. Authentication & Access Control (RBAC)
-- **Context:** The React Dashboard (`ui/`) and the API Gateway currently lack authentication.
-- **Action:** Implement a secure authentication layer.
-- **Implementation:**
-  - Add JWT-based authentication to the FastAPI gateway.
-  - Implement a login flow in the React UI.
-  - Restrict sensitive actions (like approving playbooks or executing code) to authorized roles.
-- **Impact:** Makes the platform production-ready and secures the control plane against unauthorized access.
+
